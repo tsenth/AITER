@@ -28,6 +28,18 @@ The main ranking thresholds and weights are in `src/ranking.ts`. Only live-origi
 
 ## Deploy today
 
+### Render Free public test
+
+Create a Render **Web Service** from this repository. Use `npm ci && npm run build` as the build command and `npm run web` as the start command. Set `AITER_DEPLOYMENT_MODE=free`, `HOST=0.0.0.0` and `NODE_VERSION=24`; Render supplies `PORT`. Do not set `DB_PATH` and do not attach a disk.
+
+Free mode creates a new temporary SQLite database for each process, starts discovery near the current Robinhood Chain head and rebuilds the current candidate set after every restart. It never opens or copies the full local database. AUTO HUNT is disabled and hidden in this mode. `/api/health` moves through `STARTING`, `SCANNING`, `READY` and `DEGRADED`, so a sleeping instance can wake without showing fake results.
+
+Use `/api/health` as the Render health check path. A successful HTTP response means the process is running; the JSON phase shows whether live discovery is ready. BAG remains in browser localStorage and survives server restarts on the same browser.
+
+The included `render.yaml` contains the same free Web Service settings. Connect the GoDaddy domain in Render after the service is healthy, then add the DNS records Render provides in GoDaddy.
+
+### Temporary Mac tunnel
+
 For a $0 temporary public test from this Mac, run `brew install cloudflared` and keep the Mac awake. In one terminal run `npm run web`; in another run `cloudflared tunnel --url http://localhost:3000`. Cloudflare prints a temporary HTTPS `trycloudflare.com` URL. This is a test tunnel, not durable hosting: the URL changes after restart and availability depends on the Mac and the collector staying on. Keep the local database backup and stop any other collector process first.
 
 ## AUTO HUNT beta and $AITER gate
@@ -38,7 +50,7 @@ After `$AITER` and its lock contract are deployed, set `AITER_TOKEN_ADDRESS`, `A
 
 Use an always-on Node.js 24 host with a persistent volume mounted for the SQLite database. Put this directory on the host, run `npm ci && npm run build`, set `DB_PATH` to a path on the persistent volume, `PORT` to the host-provided port and `HOST=0.0.0.0`, then run `npm run web` behind HTTPS (for example, a host's built-in reverse proxy). Deploy a copy of the existing SQLite database if historical preservation matters; otherwise a new database starts live from the current head. Do not use an ephemeral filesystem for a public collector. Run exactly one web/collector instance per database. A free-tier host that sleeps will miss launches while asleep; for reliable public testing use an always-on instance or run it on your own always-on machine with an HTTPS tunnel/reverse proxy.
 
-The process starts the web listener before the first RPC call, so `/api/health` reports `degraded` until discovery succeeds. Monitor `/api/health` for cursor lag and provider status. `GET /api/find` supplies the cards. `POST /api/events` accepts the six allowlisted product events.
+The process starts the web listener before the first RPC call. Monitor `/api/health` for phase, cursor lag and provider status. `GET /api/find` supplies the cards. `POST /api/events` accepts the allowlisted product events.
 
 ## Deliberately postponed
 

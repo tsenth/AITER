@@ -97,11 +97,14 @@ async function updateHealth() {
     const response = await fetch('/api/health', { cache: 'no-store' });
     if (!response.ok) throw Error('unavailable');
     const health = await response.json();
-    $('liveLabel').textContent = health.status === 'ok' ? 'ROBINHOOD CHAIN · LIVE' : 'ROBINHOOD CHAIN · DATA STALE';
-    document.querySelector('.status-line').classList.toggle('offline', health.status !== 'ok');
+    const ready = health.status === 'ready' || health.status === 'ok';
+    const label = ready ? 'ROBINHOOD CHAIN · LIVE' : health.status === 'starting' ? 'AITER IS WAKING UP' : health.status === 'scanning' ? 'SCANNING ROBINHOOD CHAIN' : 'ROBINHOOD CHAIN · DATA STALE';
+    $('liveLabel').textContent = label;
+    document.querySelector('.status-line').classList.toggle('offline', !ready);
+    if (health.deploymentMode === 'free') $('autoNav').hidden = true;
     const metrics = $('liveMetrics');
     metrics.replaceChildren();
-    if (health.status !== 'ok') return health;
+    if (!ready) return health;
     if (Number.isInteger(health.activeTokens)) {
       const entry = node('span');
       entry.append(node('strong', null, String(health.activeTokens)), document.createTextNode(' ACTIVE'));
@@ -358,22 +361,23 @@ async function hunt() {
     const result = await response.json();
     if (!Array.isArray(result.candidates)) throw Error('invalid result');
     const health = await updateHealth();
-    const marketReady = result.marketAvailable && health?.status === 'ok';
+    const marketReady = result.marketAvailable && (health?.status === 'ready' || health?.status === 'ok');
+    const warming = ['starting','scanning'].includes(health?.status) || ['starting','scanning'].includes(result.systemStatus);
     cards = result.candidates;
     index = 0;
     event('hunt_results_count', { count: cards.length });
     await new Promise(resolve => setTimeout(resolve, Math.max(0, 1050 - (Date.now() - started))));
     clearInterval(scanTimer);
-    $('scanTitle').textContent = cards.length ? `${cards.length} SIGNAL${cards.length === 1 ? '' : 'S'} FOUND.` : marketReady ? 'RADAR CLEAR.' : 'DATA STALE.';
-    $('scanStep').textContent = cards.length ? 'SIGNAL ACQUIRED' : marketReady ? 'NOTHING WORTH SHOWING' : 'FRESH DATA UNAVAILABLE';
+    $('scanTitle').textContent = cards.length ? `${cards.length} SIGNAL${cards.length === 1 ? '' : 'S'} FOUND.` : warming ? 'AITER IS WAKING UP.' : marketReady ? 'RADAR CLEAR.' : 'DATA STALE.';
+    $('scanStep').textContent = cards.length ? 'SIGNAL ACQUIRED' : warming ? 'SCANNING THE MARKET' : marketReady ? 'NOTHING WORTH SHOWING' : 'FRESH DATA UNAVAILABLE';
     await new Promise(resolve => setTimeout(resolve, 280));
-    $('resultCount').textContent = cards.length ? `${cards.length} SIGNAL${cards.length === 1 ? '' : 'S'} FOUND.` : marketReady ? 'RADAR CLEAR.' : health?.status === 'degraded' ? 'DATA STALE.' : 'SIGNAL LOST.';
+    $('resultCount').textContent = cards.length ? `${cards.length} SIGNAL${cards.length === 1 ? '' : 'S'} FOUND.` : warming ? 'AITER IS WAKING UP.' : marketReady ? 'RADAR CLEAR.' : health?.status === 'degraded' ? 'DATA STALE.' : 'SIGNAL LOST.';
     show('results');
     if (cards.length) renderCard();
     else {
       $('cardArea').replaceChildren(emptyPanel(
-        marketReady ? 'NOTHING WORTH SHOWING.' : health?.status === 'degraded' ? 'MARKET DATA IS STALE.' : "AITER CAN'T REACH THE MARKET.",
-        marketReady ? 'The market is quiet. AITER will keep watching.' : 'Fresh market data is unavailable right now.',
+        warming ? 'SCANNING THE MARKET.' : marketReady ? 'NOTHING WORTH SHOWING.' : health?.status === 'degraded' ? 'MARKET DATA IS STALE.' : "AITER CAN'T REACH THE MARKET.",
+        warming ? 'Live discovery is rebuilding after startup. Try again shortly.' : marketReady ? 'The market is quiet. AITER will keep watching.' : 'Fresh market data is unavailable right now.',
         'SCAN AGAIN', hunt));
     }
   } catch {

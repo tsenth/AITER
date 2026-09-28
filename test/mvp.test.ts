@@ -57,7 +57,8 @@ test('health and find handlers return JSON without fabricating candidates',async
   });
   try {
     const find=JSON.parse((await call('/api/find')).body);assert.deepEqual(find.candidates,[]);
-    const health=JSON.parse((await call('/api/health')).body);assert.equal(health.status,'degraded');
+    const health=JSON.parse((await call('/api/health')).body);assert.equal(health.status,'starting');assert.equal(health.phase,'STARTING');
+    assert.equal(health.deploymentMode,'full');
     seed(s,Date.now());const populated=JSON.parse((await call('/api/find')).body);assert.equal(populated.candidates.length,1);
     const record=JSON.parse((await call('/api/track-record')).body);assert.equal(record.totalFinds,1);assert.equal(record.entries[0].tokenAddress,token);
     const map=JSON.parse((await call('/api/market-map')).body);assert.equal(typeof map.freshLaunches,'number');

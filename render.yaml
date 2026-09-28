@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: aiter
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run web
+    healthCheckPath: /api/health
+    envVars:
+      - key: AITER_DEPLOYMENT_MODE
+        value: free
+      - key: HOST
+        value: 0.0.0.0
+      - key: NODE_VERSION
+        value: "24"

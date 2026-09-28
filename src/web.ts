@@ -31,7 +31,10 @@ function health(store:Store,cfg:Config) {
   const marketStatus=!market?'unknown':market.error?'error':now-market.fetched_at>cfg.staleMs?'stale':'ok';
   const active=store.one("SELECT count(*) n FROM tokens WHERE discovery_origin='live' AND launch_time BETWEEN ? AND ?",now-3*60*60_000,now).n;
   const lag=head!==null&&liveCursor!==null?Math.max(0,head-liveCursor):null;
-  return {status:last&&now-last<120_000&&lag!==null&&lag<=cfg.maxLiveLagBlocks?'ok':'degraded',
+  const runStarted=store.get<number|null>('runStartedAt',null);
+  const live=Boolean(last&&now-last<120_000&&lag!==null&&lag<=cfg.maxLiveLagBlocks);
+  const status=!runStarted&&!head?'starting':!last||liveCursor===null?'scanning':live?'ready':'degraded';
+  return {status,phase:status.toUpperCase(),deploymentMode:cfg.deploymentMode,
     rpcHead:head,liveCursor,cursorLagBlocks:lag,lastSuccessfulDiscovery:last?new Date(last).toISOString():null,
     activeTokens:active,marketProviderStatus:marketStatus};
 }
@@ -113,7 +116,7 @@ export function createWebServer(store:Store,cfg:Config) {
           'INSERT OR IGNORE INTO find_signals(token_address,found_at,data_timestamp,payload) VALUES (?,?,?,?)',
           candidate.tokenAddress,Date.now(),Date.parse(candidate.dataTimestamp),JSON.stringify(candidate));});
         const h=health(store,cfg);
-        return send(res,200,{candidates,count:candidates.length,marketAvailable:h.status==='ok'&&h.marketProviderStatus==='ok',checkedAt:new Date().toISOString()});
+        return send(res,200,{candidates,count:candidates.length,marketAvailable:h.status==='ready'&&h.marketProviderStatus==='ok',systemStatus:h.status,checkedAt:new Date().toISOString()});
       }
       if(req.method==='GET' && path==='/api/track-record') return send(res,200,trackRecord(store));
       if(req.method==='GET' && path==='/api/market-map') {

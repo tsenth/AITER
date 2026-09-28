@@ -13,7 +13,7 @@ if (!['start', 'web', 'report', 'status', 'diagnose'].includes(command)) {
   console.log('Usage: npm start -- [--run-seconds N] | npm run web | npm run report | npm run status | npm run diagnose');
   process.exit(command === 'help' ? 0 : 1);
 }
-if (command !== 'start' && !existsSync(cfg.dbPath)) throw new Error('Database does not exist; start the collector first.');
+if (command !== 'start' && command !== 'web' && !existsSync(cfg.dbPath)) throw new Error('Database does not exist; start the collector first.');
 const store = new Store(cfg.dbPath);
 let locked = false;
 const lockPath = cfg.dbPath + '.lock';
@@ -37,7 +37,7 @@ try {
       const host=process.env.HOST ?? '127.0.0.1';
       if (!['127.0.0.1','0.0.0.0'].includes(host)) throw new Error('HOST must be 127.0.0.1 or 0.0.0.0');
       await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(port,host,resolve);});
-      console.log(`AITER listening on port ${port}`);
+      console.log(`AITER listening on ${host}:${port} in ${cfg.deploymentMode} mode using ${cfg.dbPath}`);
     }
     try { await new Collector(store, cfg).run(seconds); }
     finally {if(server) await new Promise<void>(resolve=>server.close(()=>resolve()));}
