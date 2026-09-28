@@ -1,0 +1,223 @@
+{
+  "generatedAt": "2026-09-16T19:30:46.738Z",
+  "launches": 54,
+  "sampledTokens": 5,
+  "collectorElapsedHours": 0.08465472222222223,
+  "launchesPerCollectorElapsedHour": 637.8852659659991,
+  "launchesByUtcHour": {
+    "2026-09-16T19:00Z": 54
+  },
+  "initialLookbackIncluded": true,
+  "allLaunchCoverage": {
+    "market": {
+      "tokens": 2,
+      "percent": 3.7
+    },
+    "liquidity": {
+      "tokens": 2,
+      "percent": 3.7
+    },
+    "buyers": {
+      "tokens": 4,
+      "percent": 7.41
+    },
+    "trades": {
+      "tokens": 1,
+      "percent": 1.85
+    },
+    "tradeRanges": {
+      "tokens": 3,
+      "percent": 5.56
+    }
+  },
+  "sampledCoverage": {
+    "market": {
+      "tokens": 2,
+      "percent": 40
+    },
+    "liquidity": {
+      "tokens": 2,
+      "percent": 40
+    },
+    "buyers": {
+      "tokens": 4,
+      "percent": 80
+    },
+    "trades": {
+      "tokens": 1,
+      "percent": 20
+    },
+    "tradeRanges": {
+      "tokens": 3,
+      "percent": 60
+    }
+  },
+  "medianDiscoveryDelayMs": 74740,
+  "medianFirstMarketDelayMs": 186104,
+  "firstMarketDelayMeasuredAt": "provider fetch time; source observation time often unavailable",
+  "tradesStored": 11,
+  "snapshots": 10,
+  "providerRequests": [
+    {
+      "provider": "geckoterminal",
+      "requests": 3,
+      "rateLimits": 0,
+      "errors": 0
+    },
+    {
+      "provider": "rpc",
+      "requests": 143,
+      "rateLimits": 2,
+      "errors": 2
+    }
+  ],
+  "providerErrors": 2,
+  "rateLimitResponses": 2,
+  "missingVenueResponses": 0,
+  "rpcAttempts": 143,
+  "errorGroups": [
+    {
+      "provider": "collector",
+      "kind": "discovery",
+      "status": null,
+      "count": 1
+    },
+    {
+      "provider": "rpc",
+      "kind": "http",
+      "status": 429,
+      "count": 2
+    },
+    {
+      "provider": "rpc",
+      "kind": "state",
+      "status": null,
+      "count": 1
+    }
+  ],
+  "tracking": {
+    "15m": {
+      "eligibleSampledTokens": 0,
+      "observedThroughLaunchAge": 0,
+      "continuousMarketCoverage": 0
+    },
+    "1h": {
+      "eligibleSampledTokens": 0,
+      "observedThroughLaunchAge": 0,
+      "continuousMarketCoverage": 0
+    },
+    "6h": {
+      "eligibleSampledTokens": 0,
+      "observedThroughLaunchAge": 0,
+      "continuousMarketCoverage": 0
+    }
+  },
+  "trackingDefinition": "non-null market price observed through launch age; continuous also requires first observation within 3m and gaps <=3m before 1h, <=7m afterward",
+  "missingRates": {
+    "price": {
+      "missing": 8,
+      "snapshots": 10,
+      "percent": 80
+    },
+    "fdv": {
+      "missing": 8,
+      "snapshots": 10,
+      "percent": 80
+    },
+    "marketCap": {
+      "missing": 10,
+      "snapshots": 10,
+      "percent": 100
+    },
+    "providerLiquidityEstimate": {
+      "missing": 8,
+      "snapshots": 10,
+      "percent": 80
+    },
+    "volume5m": {
+      "missing": 8,
+      "snapshots": 10,
+      "percent": 80
+    },
+    "buys5m": {
+      "missing": 8,
+      "snapshots": 10,
+      "percent": 80
+    },
+    "sells5m": {
+      "missing": 8,
+      "snapshots": 10,
+      "percent": 80
+    },
+    "buyers5m": {
+      "missing": 8,
+      "snapshots": 10,
+      "percent": 80
+    },
+    "sellers5m": {
+      "missing": 8,
+      "snapshots": 10,
+      "percent": 80
+    },
+    "lastTradeTime": {
+      "missing": 9,
+      "snapshots": 10,
+      "percent": 90
+    },
+    "experimentalUniqueBuyers5m": {
+      "missing": 7,
+      "snapshots": 10,
+      "percent": 70
+    },
+    "curveReserves": {
+      "missing": 6,
+      "snapshots": 10,
+      "percent": 60
+    }
+  },
+  "latestSnapshotHealth": {
+    "fresh": 0,
+    "stale": 0,
+    "unknown": 5,
+    "incomplete": 5
+  },
+  "sampledMarketGaps": [
+    {
+      "token": "0x40fc2cd999d034320c0637a2479bb1704d43d285",
+      "firstMarketAgeMs": 194104,
+      "lastMarketAgeMs": 314308,
+      "maxObservedMarketGapMs": 60147
+    },
+    {
+      "token": "0x847927fbfb9b8bee0e0e41f6d6a6a33af49c0543",
+      "firstMarketAgeMs": null,
+      "lastMarketAgeMs": null,
+      "maxObservedMarketGapMs": null
+    },
+    {
+      "token": "0x38d56beb90af081e647574d497d43e67704f1eb9",
+      "firstMarketAgeMs": null,
+      "lastMarketAgeMs": null,
+      "maxObservedMarketGapMs": null
+    },
+    {
+      "token": "0xdb65b469c2f7d9b715c7f4314b757dc72ad28dbb",
+      "firstMarketAgeMs": null,
+      "lastMarketAgeMs": null,
+      "maxObservedMarketGapMs": null
+    },
+    {
+      "token": "0xec9fbd297afab3fce753f45909ead45e2cc06798",
+      "firstMarketAgeMs": 178104,
+      "lastMarketAgeMs": 298308,
+      "maxObservedMarketGapMs": 60147
+    }
+  ],
+  "limitations": [
+    "Sample is deterministic and capacity-limited, not random.",
+    "Initial lookback and downtime affect discovery-delay medians.",
+    "No six-hour completion claim until actual observations meet coverage criteria.",
+    "Post-graduation V4 RPC trades unsupported; market tracking continues.",
+    "Unique recipients are addresses, not independent humans."
+  ]
+}

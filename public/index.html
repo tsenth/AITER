@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080909">
+  <meta name="description" content="Stop monitoring. AITER finds fresh Robinhood Chain signals for you.">
+  <title>AITER. Stop monitoring.</title>
+  <link rel="icon" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css?v=14">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#find" aria-label="AITER home">AITER<span>.</span></a>
+    <nav aria-label="Main navigation">
+      <button id="findNav" class="nav active" type="button">FIND</button>
+      <button id="agentNav" class="nav" type="button">AGENT</button>
+      <button id="autoNav" class="nav" type="button">AUTO</button>
+      <button id="bagNav" class="nav" type="button">BAG <span id="bagCount"></span></button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="view home" aria-label="Find fresh tokens">
+      <div class="home-copy">
+        <div class="eyebrow status-line"><span class="live-dot"></span><span id="liveLabel">ROBINHOOD CHAIN</span></div>
+        <h1>STOP<br>MONITORING<span>.</span></h1>
+        <p class="home-statement">AITER FINDS IT<br>FOR YOU.</p>
+        <p class="home-caption">Fresh signals. Less noise. Your call.</p>
+        <button id="agentJump" class="agent-jump" type="button">HOW AITER WORKS</button>
+      </div>
+      <div class="radar-column">
+        <div class="radar" aria-label="AITER radar">
+          <div class="radar-grid"></div>
+          <div class="radar-beam"></div>
+          <div class="radar-ring ring-one"></div>
+          <div class="radar-ring ring-two"></div>
+          <div class="radar-ring ring-three"></div>
+          <div class="radar-cross horizontal"></div>
+          <div class="radar-cross vertical"></div>
+          <span class="radar-dot dot-one"></span><span class="radar-dot dot-two"></span><span class="radar-dot dot-three"></span>
+          <button id="hunt" class="radar-cta" type="button"><span class="cta-small">PRESS TO</span><span>FIND ME<br>SOMETHING</span></button>
+        </div>
+        <div id="liveMetrics" class="live-metrics" aria-live="polite"></div>
+      </div>
+
+      <div class="agent-story" id="agent">
+        <div class="agent-intro">
+          <div class="eyebrow">THE AGENT ENGINE</div>
+          <h2>ONE AGENT.<br>THE WHOLE MARKET<span>.</span></h2>
+          <p>The AITER agent watches Robinhood Chain continuously, detects fresh launches near the chain head and turns raw onchain activity into a small set of signals you can understand in seconds.</p>
+        </div>
+
+        <div class="agent-flow" aria-label="How the AITER agent works">
+          <article><span>01</span><div><h3>DISCOVER</h3><p>Reads live Pons factory events and identifies new token launches directly from Robinhood Chain.</p></div></article>
+          <article><span>02</span><div><h3>OBSERVE</h3><p>Tracks recent swaps, independent buyers, buy and sell pressure, market size, liquidity and short-window volume when available.</p></div></article>
+          <article><span>03</span><div><h3>FILTER</h3><p>Removes stale, inactive and clearly weak candidates. Missing data stays missing. AITER never turns an unknown value into zero.</p></div></article>
+          <article><span>04</span><div><h3>SURFACE</h3><p>Ranks the remaining fresh activity and explains every result with the exact signals that caused it to appear.</p></div></article>
+        </div>
+
+        <div class="agent-principle">
+          <div><span class="agent-pulse"></span><strong>LIVE-FIRST</strong><small>Current chain activity takes priority over historical backlog.</small></div>
+          <div><strong>DETERMINISTIC</strong><small>Transparent rules. No promises, predictions or invented scores.</small></div>
+          <div><strong>SELECTIVE</strong><small>AITER can return nothing when the market has nothing worth showing.</small></div>
+        </div>
+
+        <section class="market-map" aria-label="Current market funnel">
+          <div class="slot-head"><div><span>LIVE MARKET FUNNEL</span><h3>FROM LAUNCHES TO SIGNALS</h3></div><span class="slot-state" id="mapStatus">LOADING</span></div>
+          <div class="market-map-flow" id="marketMap"></div>
+          <div class="rejection-list" id="rejectionList"></div>
+        </section>
+
+        <div class="ecosystem-grid">
+          <section class="chart-slot" aria-label="Reserved chart area">
+            <div class="slot-head"><div><span>AGENT PERFORMANCE</span><h3>LIVE TRACK RECORD</h3></div><span class="slot-state">DATA SLOT</span></div>
+            <div class="chart-canvas" aria-hidden="true">
+              <span class="axis-label top">MAX MOVE</span><span class="axis-label bottom">FINDS OVER TIME</span>
+              <svg viewBox="0 0 600 190" preserveAspectRatio="none"><path class="chart-area" d="M0 172 C70 160 88 139 142 146 S218 110 270 121 S342 72 401 91 S487 28 600 43 L600 190 L0 190 Z"/><path class="chart-line" d="M0 172 C70 160 88 139 142 146 S218 110 270 121 S342 72 401 91 S487 28 600 43"/></svg>
+              <div class="chart-lock" id="recordState"><strong>TRACK RECORD</strong><span>LOADING VERIFIED OUTCOMES</span></div>
+            </div>
+            <div class="record-stats" id="recordStats"></div>
+            <details class="record-history"><summary>ALL RECORDED SIGNALS</summary><div id="recordList"></div></details>
+            <p>Every recorded signal remains in the dataset, including failed outcomes. Maximum and final performance are measured separately.</p>
+          </section>
+
+          <section class="token-slot">
+            <div class="slot-head"><div><span>ECOSYSTEM TOKEN</span><h3>$AITER</h3></div><span class="slot-state upcoming">UPCOMING</span></div>
+            <p>The future access layer for persistent AUTO HUNT. The working discovery product remains usable without a token.</p>
+            <div class="token-ca"><span>CONTRACT ADDRESS</span><strong>NOT LAUNCHED</strong></div>
+            <span class="token-link-disabled" aria-disabled="true">OFFICIAL TOKEN LINK · COMING SOON</span>
+            <small>Only the official link published here should be treated as authentic.</small>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="scan" class="view scan-view hidden" aria-live="polite">
+      <div class="eyebrow">AITER IS LOOKING</div>
+      <div class="radar scanning-radar" aria-hidden="true">
+        <div class="radar-grid"></div><div class="radar-beam"></div>
+        <div class="radar-ring ring-one"></div><div class="radar-ring ring-two"></div><div class="radar-ring ring-three"></div>
+        <div class="radar-cross horizontal"></div><div class="radar-cross vertical"></div>
+        <span class="radar-dot dot-one"></span><span class="radar-dot dot-two"></span><span class="radar-dot dot-three"></span>
+        <div class="radar-core">SCANNING<span>.</span></div>
+      </div>
+      <h2 id="scanTitle">SCANNING.</h2>
+      <p id="scanStep" class="scan-step">FINDING FRESH LAUNCHES</p>
+    </section>
+
+    <section id="results" class="view results-view hidden">
+      <div class="result-head"><div><div class="eyebrow">HUNT COMPLETE</div><h2 id="resultCount">SIGNALS FOUND.</h2></div><button id="huntAgain" class="text-button" type="button">SCAN AGAIN</button></div>
+      <div id="cardArea"></div>
+    </section>
+
+    <section id="bagPage" class="view bag-view hidden">
+      <div class="eyebrow">PERSONAL SIGNALS</div>
+      <h2>YOUR BAG<span>.</span></h2>
+      <p class="bag-intro">Signals you kept. Saved on this device.</p>
+      <div id="bagList"></div>
+    </section>
+
+    <section id="autoPage" class="view bag-view auto-view hidden">
+      <div class="eyebrow">ALWAYS WATCHING</div>
+      <h2>AUTO HUNT<span>.</span></h2>
+      <p class="bag-intro">The agent runs continuously and keeps only strict live signals.</p>
+      <div id="autoStatus" class="auto-status"></div>
+      <div id="autoList"></div>
+    </section>
+  </main>
+
+  <dialog id="tokenDialog" class="token-dialog">
+    <button id="closeTokenDialog" class="dialog-close" type="button" aria-label="Close details">CLOSE</button>
+    <div id="tokenDetail"></div>
+  </dialog>
+
+  <footer><span>AITER SURFACES MARKET ACTIVITY. IT DOES NOT PREDICT RETURNS.</span><span>ROBINHOOD CHAIN · DISCOVERY ONLY</span></footer>
+  <script src="/app.js?v=14" defer></script>
+</body>
+</html>
