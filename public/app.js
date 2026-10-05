@@ -100,7 +100,7 @@ async function updateHealth() {
     if (!response.ok) throw Error('unavailable');
     const health = await response.json();
     const ready = health.status === 'ready' || health.status === 'ok';
-    const label = ready ? 'SOLANA · LIVE' : health.status === 'starting' ? 'AITER IS WAKING UP' : health.status === 'scanning' ? 'SCANNING SOLANA' : 'SOLANA · DATA STALE';
+    const label = ready ? 'SOLANA LIVE' : health.status === 'starting' ? 'AITER IS WAKING UP' : health.status === 'scanning' ? 'SCANNING SOLANA' : 'SOLANA DATA STALE';
     $('liveLabel').textContent = label;
     document.querySelector('.status-line').classList.toggle('offline', !ready);
     if (health.deploymentMode === 'free') $('autoNav').hidden = true;
@@ -127,7 +127,7 @@ async function updateHealth() {
     }
     return health;
   } catch {
-    $('liveLabel').textContent = 'SOLANA · SIGNAL CHECK';
+    $('liveLabel').textContent = 'SOLANA SIGNAL CHECK';
     document.querySelector('.status-line').classList.add('offline');
     $('liveMetrics').replaceChildren();
   }
@@ -335,13 +335,13 @@ function next(action) {
     }
     event('token_bagged', { tokenAddress: current.tokenAddress });
     const button = card?.querySelector('.bag-action');
-    if (button) button.textContent = 'BAGGED';
+    if (button) button.textContent = 'BAGGED ✓';
   } else event('token_passed', { tokenAddress: current.tokenAddress });
   card?.classList.add(action === 'bag' ? 'leaving-right' : 'leaving-left');
   setTimeout(() => { index++; moving = false; renderCard(); $('bagCount').textContent = bag().length || ''; }, 230);
 }
 function startScanText() {
-  const steps = ['FINDING FRESH SOLANA POOLS', 'CHECKING ACTIVITY', 'FILTERING NOISE'];
+  const steps = ['FINDING FRESH SOLANA POOLS', 'CHECKING ACTIVITY', 'FILTERING NOISE', 'RANKING ACTIVITY'];
   let step = 0;
   $('scanTitle').textContent = 'SCANNING.';
   $('scanStep').textContent = steps[0];
