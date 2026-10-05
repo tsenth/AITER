@@ -1,10 +1,10 @@
 # AITER MVP
 
-AITER is a live Robinhood Chain token discovery prototype. Press FIND ME SOMETHING, review a small set of fresh cards, PASS or save to a browser-local BAG, then open a token on GeckoTerminal. It does not execute trades or predict returns.
+AITER is a live Solana token discovery prototype. Press FIND ME SOMETHING, review a small set of fresh cards, PASS or save to a browser-local BAG, then open the pool on GeckoTerminal. It does not execute trades or predict returns.
 
 ## Run locally
 
-Requires Node.js 24+ and npm. From this directory:
+Requires Node.js 24+ and npm.
 
 ```sh
 npm ci
@@ -14,44 +14,48 @@ npm run build
 npm run web
 ```
 
-Open `http://localhost:3000`. The web command runs the live collector and API in one process. It preserves `data/find.sqlite` and upgrades its schema in place; make a backup before public deployment. `npm start` runs the collector without the web interface. `npm run status` and `npm run report` inspect the database.
+Open `http://localhost:3000`. The web command runs the collector, API and website in one process.
 
-Do not run two collector processes against the same database. If an old collector is running, stop it first. A stale `.lock` from a dead process is removed automatically. The old historical cursor is preserved as paused backfill metadata; the new live cursor starts close to the RPC head.
+## Solana data path
 
-## Configuration
+The active chain defaults to `solana`. AITER requests the documented GeckoTerminal endpoint below with API version `20230203`:
 
-`.env.example` lists every option. `RPC_URL` defaults to the public Robinhood Chain RPC; `DB_PATH` defaults to `data/find.sqlite`; `PORT` defaults to `3000`; `HOST` defaults to loopback for local use. The other defaults are tuned for a small free-tier live sample. No API key is required. The public RPC and GeckoTerminal may rate-limit; the UI then returns fewer or zero cards rather than old observations.
+```text
+GET https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page={page}&include=base_token,quote_token,dex
+```
 
-`RPC_ENRICHMENT=false` is intentional for the MVP: optional trade and contract-state RPC reads would compete with live launch discovery. GeckoTerminal supplies the card activity metrics. Set it to `true` only when you have enough RPC capacity and need the deeper Lab observations.
+The collector reads three pages once per minute by default, stores only temporary current pool state in free mode, accepts SOL and USDC quote pools, and removes stale rows. Ranking deduplicates by mint and chooses the strongest current pool. Missing optional values remain null.
 
-The main ranking thresholds and weights are in `src/ranking.ts`. Only live-origin tokens aged at most three hours with a market observation newer than `STALE_AFTER_MS` and complete price, size, liquidity and 5-minute activity fields can appear. No fixed result count is promised. BAG is localStorage on that browser. Product events are aggregate action rows in `product_events` with no IP or wallet data.
+`SOLANA_DISCOVERY_MS` cannot be set below 60 seconds. `SOLANA_NEW_POOL_PAGES` accepts 1 through 5. These defaults stay below the public API's approximate rate limit and avoid per-token enrichment calls.
 
-## Deploy today
+The legacy Robinhood Lab collector remains available with `AITER_CHAIN=robinhood`. Its tables and local research database are not read by the Solana ranking path.
 
-### Render Free public test
+## Render Free
 
-Create a Render **Web Service** from this repository. Use `npm ci && npm run build` as the build command and `npm run web` as the start command. Set `AITER_DEPLOYMENT_MODE=free`, `HOST=0.0.0.0` and `NODE_VERSION=24`; Render supplies `PORT`. Do not set `DB_PATH` and do not attach a disk.
+Create a Render Web Service from this repository.
 
-Free mode creates a new temporary SQLite database for each process, starts discovery near the current Robinhood Chain head and rebuilds the current candidate set after every restart. It never opens or copies the full local database. AUTO HUNT is disabled and hidden in this mode. `/api/health` moves through `STARTING`, `SCANNING`, `READY` and `DEGRADED`, so a sleeping instance can wake without showing fake results.
+```text
+Build command: npm ci && npm run build
+Start command: npm run web
+Health check path: /api/health
+Persistent disk: none
+```
 
-Use `/api/health` as the Render health check path. A successful HTTP response means the process is running; the JSON phase shows whether live discovery is ready. BAG remains in browser localStorage and survives server restarts on the same browser.
+Set:
 
-The included `render.yaml` contains the same free Web Service settings. Connect the GoDaddy domain in Render after the service is healthy, then add the DNS records Render provides in GoDaddy.
+```text
+AITER_CHAIN=solana
+AITER_DEPLOYMENT_MODE=free
+HOST=0.0.0.0
+NODE_VERSION=24
+```
 
-### Temporary Mac tunnel
+Render supplies `PORT`. Do not set `DB_PATH` and do not attach a disk. Free mode creates a unique temporary SQLite database for each process. After a sleep or restart it fetches current Solana pools again. `/api/health` moves through `STARTING`, `SCANNING`, `READY` and `DEGRADED`.
 
-For a $0 temporary public test from this Mac, run `brew install cloudflared` and keep the Mac awake. In one terminal run `npm run web`; in another run `cloudflared tunnel --url http://localhost:3000`. Cloudflare prints a temporary HTTPS `trycloudflare.com` URL. This is a test tunnel, not durable hosting: the URL changes after restart and availability depends on the Mac and the collector staying on. Keep the local database backup and stop any other collector process first.
+BAG remains in browser localStorage and survives server restarts. Old BAG records are preserved, while new records include `chain`, `mintAddress` and `poolAddress`.
 
-## AUTO HUNT beta and $AITER gate
+## Data integrity
 
-`AUTO_HUNT_ENABLED=true` starts the deterministic background agent. It saves only strict, fresh signals and never invents missing market values. `AUTO_HUNT_BETA=true` exposes those signals as an open beta.
+Only pools created within three hours and refreshed within the configured freshness limit can enter `/api/find`. The normal filter prefers at least $10K size, $5K liquidity and meaningful five-minute activity. The fallback still requires real fresh activity and rejects confirmed tiny size or thin liquidity. No fixed result count is promised.
 
-After `$AITER` and its lock contract are deployed, set `AITER_TOKEN_ADDRESS`, `AITER_LOCK_ADDRESS`, and `AUTO_HUNT_MIN_LOCKED` (raw token units), then set `AUTO_HUNT_BETA=false`. The web flow asks the wallet to sign a short-lived challenge and the server reads `lockedBalanceOf(address)` from the configured lock contract before issuing a 24-hour session. Contract deployment and token issuance are intentionally separate from the app and require audited contract code, final token parameters, and the owner's wallet.
-
-Use an always-on Node.js 24 host with a persistent volume mounted for the SQLite database. Put this directory on the host, run `npm ci && npm run build`, set `DB_PATH` to a path on the persistent volume, `PORT` to the host-provided port and `HOST=0.0.0.0`, then run `npm run web` behind HTTPS (for example, a host's built-in reverse proxy). Deploy a copy of the existing SQLite database if historical preservation matters; otherwise a new database starts live from the current head. Do not use an ephemeral filesystem for a public collector. Run exactly one web/collector instance per database. A free-tier host that sleeps will miss launches while asleep; for reliable public testing use an always-on instance or run it on your own always-on machine with an HTTPS tunnel/reverse proxy.
-
-The process starts the web listener before the first RPC call. Monitor `/api/health` for phase, cursor lag and provider status. `GET /api/find` supplies the cards. `POST /api/events` accepts the allowlisted product events.
-
-## Deliberately postponed
-
-Deep holder and contract risk analysis, wallet clustering, Auto Hunt, $AITER utility, wallets, trading, multichain, public outcome track record and BAG performance. The MVP's rule score is internal and is a discovery heuristic only.
+AUTO HUNT is disabled for Solana. No API key, paid provider, wallet connection or persistent disk is required for the public MVP.

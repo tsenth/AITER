@@ -9,6 +9,8 @@ services:
     envVars:
       - key: AITER_DEPLOYMENT_MODE
         value: free
+      - key: AITER_CHAIN
+        value: solana
       - key: HOST
         value: 0.0.0.0
       - key: NODE_VERSION

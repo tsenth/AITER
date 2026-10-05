@@ -153,7 +153,7 @@ test('schema v1 migrates in place without changing observations or legacy origin
     const old=new DatabaseSync(path);old.exec(schema+'PRAGMA user_version=1');
     old.prepare(`INSERT INTO tokens(token_address,deployer_address,factory,protocol_version,quote_asset,launch_block,launch_time,discovered_at,block_hash,transaction_hash,log_index) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(token,actor,curve,'pons-v2',quote,100,1000,1100,hash,hash,1);
     old.prepare('INSERT INTO observations(token_address,provider,kind,fetched_at,payload) VALUES (?,?,?,?,?)').run(token,'rpc','launch',1100,'{"x":1}');old.close();
-    const s=new Store(path);assert.equal(s.one('PRAGMA user_version').user_version,6);assert.equal(s.one('SELECT discovery_origin FROM tokens').discovery_origin,'legacy');
+    const s=new Store(path);assert.equal(s.one('PRAGMA user_version').user_version,7);assert.equal(s.one('SELECT discovery_origin FROM tokens').discovery_origin,'legacy');
     assert.equal(s.one('SELECT payload FROM observations').payload,'{"x":1}');s.close();
   } finally {rmSync(dir,{recursive:true,force:true});}
 });

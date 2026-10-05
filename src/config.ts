@@ -13,6 +13,8 @@ function address(name: string): `0x${string}` | null {
   return value.toLowerCase() as `0x${string}`;
 }
 export function config() {
+  const chain = process.env.AITER_CHAIN ?? 'solana';
+  if (!['solana', 'robinhood'].includes(chain)) throw new Error('AITER_CHAIN must be solana or robinhood');
   const rpcUrl = process.env.RPC_URL ?? 'https://rpc.mainnet.chain.robinhood.com';
   if (!/^https?:\/\//.test(rpcUrl)) throw new Error('RPC_URL must use HTTP(S)');
   const deploymentMode = process.env.AITER_DEPLOYMENT_MODE ?? 'full';
@@ -21,6 +23,7 @@ export function config() {
     ? `${tmpdir()}/aiter-free-${process.pid}.sqlite`
     : process.env.DB_PATH ?? 'data/find.sqlite';
   return {
+    chain: chain as 'solana' | 'robinhood',
     deploymentMode: deploymentMode as 'full' | 'free',
     rpcUrl, dbPath: resolve(dbPath),
     discoveryMs: integer('DISCOVERY_MS', 15_000, 15_000),
@@ -36,12 +39,14 @@ export function config() {
     staleMs: integer('STALE_AFTER_MS', 180_000, 60_000),
     rpcSpacingMs: integer('RPC_SPACING_MS', 1000, 500),
     rpcEnrichment: process.env.RPC_ENRICHMENT === 'true',
-    autoHuntEnabled: deploymentMode === 'free' ? false : process.env.AUTO_HUNT_ENABLED === 'true',
+    autoHuntEnabled: deploymentMode === 'free' || chain === 'solana' ? false : process.env.AUTO_HUNT_ENABLED === 'true',
     autoHuntBeta: process.env.AUTO_HUNT_BETA === 'true',
     aiterTokenAddress: address('AITER_TOKEN_ADDRESS'),
     aiterLockAddress: address('AITER_LOCK_ADDRESS'),
     autoHuntMinLocked: process.env.AUTO_HUNT_MIN_LOCKED ?? '0',
     geckoBase: 'https://api.geckoterminal.com/api/v2',
+    solanaDiscoveryMs: integer('SOLANA_DISCOVERY_MS', 60_000, 60_000, 600_000),
+    solanaNewPoolPages: integer('SOLANA_NEW_POOL_PAGES', 3, 1, 5),
   };
 }
 export type Config = ReturnType<typeof config>;

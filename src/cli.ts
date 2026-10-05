@@ -6,6 +6,7 @@ import { report, status } from './report.js';
 import { createWebServer } from './web.js';
 import { rankDetailed } from './ranking.js';
 import { FACTORIES } from './pons.js';
+import { SolanaCollector, rankSolanaDetailed } from './solana.js';
 
 const cfg = config();
 const command = process.argv[2] ?? 'help';
@@ -39,10 +40,13 @@ try {
       await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(port,host,resolve);});
       console.log(`AITER listening on ${host}:${port} in ${cfg.deploymentMode} mode using ${cfg.dbPath}`);
     }
-    try { await new Collector(store, cfg).run(seconds); }
+    try { await (cfg.chain==='solana'?new SolanaCollector(store,cfg):new Collector(store, cfg)).run(seconds); }
     finally {if(server) await new Promise<void>(resolve=>server.close(()=>resolve()));}
   } else if (command === 'report') console.log(JSON.stringify(report(store), null, 2));
   else if (command === 'diagnose') {
+    if(cfg.chain==='solana') {
+      console.log(JSON.stringify({chain:'solana',...rankSolanaDetailed(store,cfg).diagnostic},null,2));
+    } else {
     const now=Date.now(),head=store.get<number|null>('rpcHead',null);
     const cursors=FACTORIES.map(f=>store.get<{block:number}|null>(`liveDiscovery:${f.address}`,null)?.block??null);
     const liveCursor=cursors.every(n=>n!==null)?Math.min(...cursors as number[]):null;
@@ -51,6 +55,7 @@ try {
       now-minutes*60_000,now).n]));
     console.log(JSON.stringify({rpcHead:head,liveCursor,cursorLag:head!==null&&liveCursor!==null?head-liveCursor:null,
       launches,...rankDetailed(store,cfg,now).diagnostic},null,2));
+    }
   }
   else console.log(status(store));
 } catch (e) { console.error((e as Error).message); process.exitCode = 1; }

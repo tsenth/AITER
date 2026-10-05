@@ -9,6 +9,7 @@ import type { Config } from './config.js';
 import { rank, rankDetailed } from './ranking.js';
 import { FACTORIES } from './pons.js';
 import { normalizeMarket } from './normalize.js';
+import { isSolanaAddress, rankSolana, rankSolanaDetailed, solanaHealth } from './solana.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../public');
 const files: Record<string,[string,string]> = {
@@ -21,7 +22,7 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});
   res.end(JSON.stringify(body));
 }
-function health(store:Store,cfg:Config) {
+function robinhoodHealth(store:Store,cfg:Config) {
   const now=Date.now();
   const head=store.get<number|null>('rpcHead',null);
   const cursors=FACTORIES.map(f=>store.get<{block:number}|null>(`liveDiscovery:${f.address}`,null)?.block ?? null);
@@ -34,10 +35,11 @@ function health(store:Store,cfg:Config) {
   const runStarted=store.get<number|null>('runStartedAt',null);
   const live=Boolean(last&&now-last<120_000&&lag!==null&&lag<=cfg.maxLiveLagBlocks);
   const status=!runStarted&&!head?'starting':!last||liveCursor===null?'scanning':live?'ready':'degraded';
-  return {status,phase:status.toUpperCase(),deploymentMode:cfg.deploymentMode,
+  return {chain:'robinhood',status,phase:status.toUpperCase(),deploymentMode:cfg.deploymentMode,
     rpcHead:head,liveCursor,cursorLagBlocks:lag,lastSuccessfulDiscovery:last?new Date(last).toISOString():null,
     activeTokens:active,marketProviderStatus:marketStatus};
 }
+const health=(store:Store,cfg:Config)=>cfg.chain==='solana'?solanaHealth(store,cfg):robinhoodHealth(store,cfg);
 const change=(initial:any,current:any)=>{
   for(const key of ['price','marketCap','fdv'])if(Number(initial?.[key])>0&&Number(current?.[key])>=0)return (Number(current[key])/Number(initial[key])-1)*100;
   return null;
@@ -58,6 +60,13 @@ function trackRecord(store:Store,now=Date.now()) {
   const completed=(key:'oneHour'|'sixHour')=>entries.filter(entry=>entry[key].complete&&entry[key].final!==null);
   const stats=(key:'oneHour'|'sixHour')=>{const rows=completed(key),finals=rows.map(row=>row[key].final!) as number[],maxes=rows.map(row=>row[key].max).filter(Number.isFinite) as number[];return {completed:rows.length,medianFinal:median(finals),medianMax:median(maxes),reached50:maxes.length?maxes.filter(v=>v>=50).length/maxes.length*100:null,reached100:maxes.length?maxes.filter(v=>v>=100).length/maxes.length*100:null};};
   return {totalFinds:entries.length,oneHour:stats('oneHour'),sixHour:stats('sixHour'),entries:entries.slice(0,100)};
+}
+function solanaTrackRecord(store:Store) {
+  const rows=store.all('SELECT mint_address,found_at,payload FROM solana_find_signals ORDER BY found_at DESC LIMIT 100');
+  const entries=rows.flatMap(row=>{try{const item=JSON.parse(row.payload);return [{tokenAddress:row.mint_address,symbol:item.symbol??null,
+    name:item.name??null,foundAt:new Date(row.found_at).toISOString(),oneHour:{complete:false,max:null,final:null},sixHour:{complete:false,max:null,final:null}}];}catch{return [];}});
+  const empty={completed:0,medianFinal:null,medianMax:null,reached50:null,reached100:null};
+  return {totalFinds:entries.length,oneHour:empty,sixHour:{...empty},entries};
 }
 export function createWebServer(store:Store,cfg:Config) {
   const challenges=new Map<string,{message:string,expires:number}>();
@@ -111,21 +120,32 @@ export function createWebServer(store:Store,cfg:Config) {
         return send(res,200,{signals,count:signals.length,lastPass:store.get<number|null>('lastAutoHuntPass',null)});
       }
       if(req.method==='GET' && path==='/api/find') {
-        const candidates=rank(store,cfg);
-        store.atomic(()=>{for(const candidate of candidates)store.run(
+        const candidates=cfg.chain==='solana'?rankSolana(store,cfg):rank(store,cfg);
+        store.atomic(()=>{for(const candidate of candidates) cfg.chain==='solana'?store.run(
+          'INSERT OR IGNORE INTO solana_find_signals(mint_address,pool_address,found_at,data_timestamp,payload) VALUES (?,?,?,?,?)',
+          candidate.mintAddress,candidate.poolAddress,Date.now(),Date.parse(candidate.dataTimestamp),JSON.stringify(candidate)):store.run(
           'INSERT OR IGNORE INTO find_signals(token_address,found_at,data_timestamp,payload) VALUES (?,?,?,?)',
           candidate.tokenAddress,Date.now(),Date.parse(candidate.dataTimestamp),JSON.stringify(candidate));});
         const h=health(store,cfg);
         return send(res,200,{candidates,count:candidates.length,marketAvailable:h.status==='ready'&&h.marketProviderStatus==='ok',systemStatus:h.status,checkedAt:new Date().toISOString()});
       }
-      if(req.method==='GET' && path==='/api/track-record') return send(res,200,trackRecord(store));
+      if(req.method==='GET' && path==='/api/track-record') return send(res,200,cfg.chain==='solana'?solanaTrackRecord(store):trackRecord(store));
       if(req.method==='GET' && path==='/api/market-map') {
-        const diagnostic=rankDetailed(store,cfg).diagnostic;
+        const diagnostic=cfg.chain==='solana'?rankSolanaDetailed(store,cfg).diagnostic:rankDetailed(store,cfg).diagnostic;
         return send(res,200,{freshLaunches:diagnostic.coverage.freshLaunches,active:diagnostic.coverage.eligibleWithActivity,
           passed:diagnostic.relaxedSurvivors,signals:diagnostic.resultCount,rejections:diagnostic.relaxedRejected,checkedAt:new Date().toISOString()});
       }
       if(req.method==='GET' && path==='/api/token-detail') {
-        const address=(new URL(req.url??'/','http://localhost').searchParams.get('token')??'').toLowerCase();
+        const rawAddress=new URL(req.url??'/','http://localhost').searchParams.get('token')??'';
+        if(cfg.chain==='solana') {
+          if(!isSolanaAddress(rawAddress))return send(res,400,{error:'Invalid mint'});
+          const token=store.one('SELECT * FROM solana_pools WHERE mint_address=? ORDER BY fetched_at DESC,liquidity DESC LIMIT 1',rawAddress);
+          if(!token)return send(res,404,{error:'Token not found'});
+          return send(res,200,{token:{chain:'solana',tokenAddress:token.mint_address,mintAddress:token.mint_address,poolAddress:token.pool_address,
+            name:token.name,symbol:token.symbol,createdAt:new Date(token.created_at).toISOString(),phase:'pool'},profile:null,
+            activity:{trades:(token.buys_5m??0)+(token.sells_5m??0),buys:token.buys_5m,sells:token.sells_5m,buyers:token.buyers_5m},snapshots:[]});
+        }
+        const address=rawAddress.toLowerCase();
         if(!/^0x[0-9a-f]{40}$/.test(address))return send(res,400,{error:'Invalid token'});
         const token=store.one('SELECT t.*,v.* FROM tokens t JOIN venues v USING(token_address) WHERE t.token_address=?',address);
         if(!token)return send(res,404,{error:'Token not found'});
@@ -136,6 +156,16 @@ export function createWebServer(store:Store,cfg:Config) {
       }
       if(req.method==='GET' && path==='/api/bag-market') {
         const raw=new URL(req.url ?? '/', 'http://localhost').searchParams.get('tokens')??'';
+        if(cfg.chain==='solana') {
+          const tokens=[...new Set(raw.split(',').filter(isSolanaAddress))].slice(0,50);
+          if(!tokens.length)return send(res,200,{tokens:[],checkedAt:new Date().toISOString()});
+          const placeholders=tokens.map(()=>'?').join(',');
+          const rows=store.all(`SELECT * FROM solana_pools WHERE mint_address IN (${placeholders}) ORDER BY fetched_at DESC,liquidity DESC`,...tokens);
+          const best=new Map<string,any>();for(const row of rows)if(!best.has(row.mint_address))best.set(row.mint_address,row);
+          return send(res,200,{tokens:[...best.values()].map(row=>({chain:'solana',tokenAddress:row.mint_address,mintAddress:row.mint_address,
+            poolAddress:row.pool_address,price:row.price,fdv:row.fdv,marketCap:row.market_cap,liquidity:row.liquidity,
+            dataTimestamp:new Date(row.fetched_at).toISOString(),status:Date.now()-row.fetched_at<=cfg.staleMs?'live':'unavailable',history:[]})),checkedAt:new Date().toISOString()});
+        }
         const tokens=[...new Set(raw.split(',').map(v=>v.toLowerCase()).filter(v=>/^0x[0-9a-f]{40}$/.test(v)))].slice(0,50);
         if(!tokens.length) return send(res,200,{tokens:[],checkedAt:new Date().toISOString()});
         const placeholders=tokens.map(()=>'?').join(',');
@@ -173,9 +203,10 @@ export function createWebServer(store:Store,cfg:Config) {
       }
       if(req.method==='POST' && path==='/api/events') {
         let data:any; try {data=await body(req,1024);} catch {return send(res,400,{error:'Invalid JSON'});}
-        if(!events.has(data.event) || (data.tokenAddress!==undefined && !/^0x[0-9a-f]{40}$/i.test(data.tokenAddress)) ||
+        const validToken=data.tokenAddress===undefined||(cfg.chain==='solana'?isSolanaAddress(data.tokenAddress):/^0x[0-9a-f]{40}$/i.test(data.tokenAddress));
+        if(!events.has(data.event) || !validToken ||
            (data.count!==undefined && (!Number.isInteger(data.count)||data.count<0||data.count>1000))) return send(res,400,{error:'Invalid event'});
-        store.run('INSERT INTO product_events(event,token_address,count,occurred_at) VALUES (?,?,?,?)',data.event,data.tokenAddress??null,data.count??null,Date.now());
+        store.run('INSERT INTO product_events(event,token_address,count,occurred_at,chain) VALUES (?,?,?,?,?)',data.event,data.tokenAddress??null,data.count??null,Date.now(),cfg.chain);
         return send(res,204,null);
       }
       if(req.method==='GET' && files[path]) {

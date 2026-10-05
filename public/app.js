@@ -24,8 +24,10 @@ const money = value => value == null || !Number.isFinite(Number(value)) ? 'N/A' 
   `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 const age = value => value < 3600000 ? `${Math.max(1, Math.floor(value / 60000))}M` : `${(value / 3600000).toFixed(1)}H`;
 const safeUrl = url => typeof url === 'string' && (
+  /^https:\/\/www\.geckoterminal\.com\/solana\/pools\/[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(url) ||
   /^https:\/\/www\.geckoterminal\.com\/robinhood\/pools\/0x[0-9a-f]{40}$/i.test(url) ||
   /^https:\/\/robinhoodchain\.blockscout\.com\/token\/0x[0-9a-f]{40}$/i.test(url));
+const itemKey=item=>item?.chain==='solana'||item?.mintAddress?String(item.mintAddress??item.tokenAddress):String(item?.tokenAddress??'').toLowerCase();
 const safeSocialUrl = url => {
   try { const parsed=new URL(url); return parsed.protocol === 'https:' && !parsed.username && !parsed.password; }
   catch { return false; }
@@ -33,7 +35,7 @@ const safeSocialUrl = url => {
 const safeTradeUrl=url=>typeof url==='string'&&/^https:\/\/www\.ponsfamily\.com\/launchpad\/0x[0-9a-f]{40}$/i.test(url);
 function event(name, fields = {}) {
   fetch('/api/events', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ event: name, ...fields }), keepalive: true }).catch(() => {});
+    body: JSON.stringify({ event: name, chain:'solana', ...fields }), keepalive: true }).catch(() => {});
 }
 function show(view) {
   for (const id of ['home', 'scan', 'results', 'bagPage', 'autoPage']) $(id).classList.toggle('hidden', id !== view);
@@ -98,7 +100,7 @@ async function updateHealth() {
     if (!response.ok) throw Error('unavailable');
     const health = await response.json();
     const ready = health.status === 'ready' || health.status === 'ok';
-    const label = ready ? 'ROBINHOOD CHAIN · LIVE' : health.status === 'starting' ? 'AITER IS WAKING UP' : health.status === 'scanning' ? 'SCANNING ROBINHOOD CHAIN' : 'ROBINHOOD CHAIN · DATA STALE';
+    const label = ready ? 'SOLANA · LIVE' : health.status === 'starting' ? 'AITER IS WAKING UP' : health.status === 'scanning' ? 'SCANNING SOLANA' : 'SOLANA · DATA STALE';
     $('liveLabel').textContent = label;
     document.querySelector('.status-line').classList.toggle('offline', !ready);
     if (health.deploymentMode === 'free') $('autoNav').hidden = true;
@@ -125,7 +127,7 @@ async function updateHealth() {
     }
     return health;
   } catch {
-    $('liveLabel').textContent = 'ROBINHOOD CHAIN · SIGNAL CHECK';
+    $('liveLabel').textContent = 'SOLANA · SIGNAL CHECK';
     document.querySelector('.status-line').classList.add('offline');
     $('liveMetrics').replaceChildren();
   }
@@ -176,7 +178,9 @@ async function showTokenDetail(current) {
     for(const [label,value] of [['AGE',age(Date.now()-Date.parse(data.token.createdAt))],['PHASE',data.token.phase],['TRADES',data.activity?.trades??'N/A'],['BUYERS',data.activity?.buyers??'N/A'],['DEV HOLDING',data.profile?.developer_holding_percentage==null?'NOT CHECKED':`${data.profile.developer_holding_percentage}%`],['HONEYPOT',data.profile?.is_honeypot??'NOT CHECKED']]) {const box=node('div');box.append(node('span',null,label),node('strong',null,value));grid.append(box);}content.append(grid);
     const flags=node('div','detail-flags');for(const flag of current.redFlags||[])flags.append(node('span',null,flag));if(!flags.childNodes.length)flags.append(node('span','clear','NO CONFIRMED FLAGS'));content.append(node('h3','detail-title','CHECKS'),flags);
     const history=node('div','detail-history');history.append(node('h3','detail-title','OBSERVATION HISTORY'),node('p',null,`${data.snapshots.length} VERIFIED MARKET SNAPSHOTS STORED`));content.append(history);
-    const addresses=node('div','detail-addresses');addresses.append(node('span',null,'TOKEN'),node('code',null,data.token.tokenAddress),node('span',null,'DEPLOYER'),node('code',null,data.token.deployerAddress));content.append(addresses);
+    const addresses=node('div','detail-addresses');addresses.append(node('span',null,data.token.chain==='solana'?'MINT':'TOKEN'),node('code',null,data.token.mintAddress??data.token.tokenAddress));
+    if(data.token.chain==='solana')addresses.append(node('span',null,'POOL'),node('code',null,data.token.poolAddress));
+    else addresses.append(node('span',null,'DEPLOYER'),node('code',null,data.token.deployerAddress));content.append(addresses);
   } catch {content.replaceChildren(emptyPanel('DETAIL UNAVAILABLE.','Verified token data could not be loaded.',null));}
 }
 function shillSignal(current) {
@@ -200,7 +204,8 @@ function renderCard() {
   const top = node('div', 'card-top');
   const identity = node('div', 'token-identity');
   const mark = node('div', 'token-mark', (current.symbol || '?').slice(0, 1).toUpperCase());
-  mark.style.setProperty('--orb-angle', `${parseInt((current.tokenAddress || '00').slice(-2), 16) % 180 + 70}deg`);
+  const addressHash=[...(current.tokenAddress||'')].reduce((sum,char)=>sum+char.charCodeAt(0),0);
+  mark.style.setProperty('--orb-angle', `${addressHash % 180 + 70}deg`);
   const heading = node('div', 'token-heading');
   heading.append(node('h3', null, current.symbol ? `$${current.symbol}` : `${current.tokenAddress.slice(0,8)}…`),
     node('p', 'token-name', current.name || current.tokenAddress));
@@ -316,8 +321,8 @@ function next(action) {
   const card = document.querySelector('.card');
   if (action === 'bag') {
     const saved = bag();
-    if (!saved.some(item => item.tokenAddress?.toLowerCase() === current.tokenAddress.toLowerCase())) {
-      saved.unshift({ tokenAddress: current.tokenAddress, symbol: current.symbol, name: current.name,
+    if (!saved.some(item => itemKey(item) === itemKey(current))) {
+      saved.unshift({ chain:'solana',tokenAddress:current.tokenAddress,mintAddress:current.mintAddress??current.tokenAddress,poolAddress:current.poolAddress??null,symbol: current.symbol, name: current.name,
         fdv: current.fdv, marketCap: current.marketCap, price: current.price,
         baggedAt: new Date().toISOString(), externalUrl: current.externalUrl });
       try { localStorage.setItem(BAG_KEY, JSON.stringify(saved)); }
@@ -336,7 +341,7 @@ function next(action) {
   setTimeout(() => { index++; moving = false; renderCard(); $('bagCount').textContent = bag().length || ''; }, 230);
 }
 function startScanText() {
-  const steps = ['FINDING FRESH LAUNCHES', 'CHECKING ACTIVITY', 'FILTERING NOISE'];
+  const steps = ['FINDING FRESH SOLANA POOLS', 'CHECKING ACTIVITY', 'FILTERING NOISE'];
   let step = 0;
   $('scanTitle').textContent = 'SCANNING.';
   $('scanStep').textContent = steps[0];
@@ -404,7 +409,7 @@ function bagChart(saved,liveByToken) {
   if(Number.isFinite(start) && end>start) for(let i=0;i<30;i++) {
     const at=start+(end-start)*i/29,values=[];
     for(const item of saved) {
-      const live=liveByToken.get(item.tokenAddress.toLowerCase()),bagged=Date.parse(item.baggedAt);
+      const live=liveByToken.get(itemKey(item)),bagged=Date.parse(item.baggedAt);
       if(!live || at<bagged)continue;
       const history=(live.history||[]).filter(point=>Date.parse(point.at)>=bagged && Date.parse(point.at)<=at);
       const observation=history.at(-1);if(!observation)continue;
@@ -436,20 +441,20 @@ async function renderBag() {
   const loading=node('div','bag-loading','REFRESHING LIVE MARKET DATA…');list.append(loading);
   let liveByToken=new Map();
   try {
-    const query=saved.slice(0,50).map(item=>item.tokenAddress).join(',');
+    const query=saved.filter(item=>item.chain==='solana'||item.mintAddress).slice(0,50).map(item=>item.mintAddress??item.tokenAddress).join(',');
     const response=await fetch(`/api/bag-market?tokens=${encodeURIComponent(query)}`,{cache:'no-store',signal:AbortSignal.timeout(10000)});
     const data=await response.json();
-    if(response.ok && Array.isArray(data.tokens)) liveByToken=new Map(data.tokens.map(item=>[item.tokenAddress.toLowerCase(),item]));
+    if(response.ok && Array.isArray(data.tokens)) liveByToken=new Map(data.tokens.map(item=>[itemKey(item),item]));
   } catch { /* Individual rows will clearly show unavailable data. */ }
   loading.remove();
-  const performance=saved.map(item=>pnlFor(item,liveByToken.get(item.tokenAddress.toLowerCase()))).filter(Number.isFinite);
+  const performance=saved.map(item=>pnlFor(item,liveByToken.get(itemKey(item)))).filter(Number.isFinite);
   const analytics=node('section','bag-analytics');
   const analyticsHead=node('div','bag-analytics-head');analyticsHead.append(node('span',null,'BAG ANALYTICS'),node('small',null,'TRACKING ONLY · NOT A POSITION'));
   analytics.append(analyticsHead);
   const stats=node('div','bag-stats');
   const stat=(label,value,kind='')=>{const box=node('div',kind);box.append(node('span',null,label),node('strong',null,value));stats.append(box);};
   const average=performance.length?performance.reduce((a,b)=>a+b,0)/performance.length:null;
-  const ranked=saved.map(item=>({item,pnl:pnlFor(item,liveByToken.get(item.tokenAddress.toLowerCase()))})).filter(entry=>Number.isFinite(entry.pnl)).sort((a,b)=>b.pnl-a.pnl);
+  const ranked=saved.map(item=>({item,pnl:pnlFor(item,liveByToken.get(itemKey(item)))})).filter(entry=>Number.isFinite(entry.pnl)).sort((a,b)=>b.pnl-a.pnl);
   const averageHold=saved.reduce((sum,item)=>sum+Math.max(0,Date.now()-Date.parse(item.baggedAt)),0)/saved.length;
   stat('SAVED',String(saved.length));stat('LIVE PNL',`${performance.length} / ${saved.length}`);
   stat('AVG PNL',average===null?'N/A':percent(average),average===null?'':average>=0?'positive':'negative');
@@ -461,14 +466,14 @@ async function renderBag() {
   analytics.append(extremes);list.append(analytics);
   const filters=node('div','bag-filters');
   for(const [key,label] of [['all','ALL'],['winners','WINNERS'],['losers','LOSERS'],['pending','NO DATA']]) {const button=node('button',bagFilter===key?'active':'',label);button.type='button';button.onclick=()=>{bagFilter=key;renderBag();};filters.append(button);}list.append(filters);
-  const displayed=saved.filter(item=>{const pnl=pnlFor(item,liveByToken.get(item.tokenAddress.toLowerCase()));return bagFilter==='all'||bagFilter==='winners'&&pnl>0||bagFilter==='losers'&&pnl<0||bagFilter==='pending'&&pnl===null;});
+  const displayed=saved.filter(item=>{const pnl=pnlFor(item,liveByToken.get(itemKey(item)));return bagFilter==='all'||bagFilter==='winners'&&pnl>0||bagFilter==='losers'&&pnl<0||bagFilter==='pending'&&pnl===null;});
   if(!displayed.length)list.append(node('div','bag-filter-empty','NO TOKENS IN THIS VIEW'));
   for (const item of displayed) {
     const row = node('div', 'bag-item');
     const left = node('div');
     left.append(node('h3', null, item.symbol ? `$${item.symbol}` : `${item.tokenAddress.slice(0,8)}…`),
       node('p', 'bag-name', item.name || item.tokenAddress));
-    const live=liveByToken.get(item.tokenAddress.toLowerCase());
+    const live=liveByToken.get(itemKey(item));
     const pnl=pnlFor(item,live);
     const meta = node('div', 'bag-meta');
     meta.append(document.createTextNode(`${item.marketCap != null ? 'MC' : 'FDV'} WHEN BAGGED `),
@@ -491,7 +496,7 @@ async function renderBag() {
       open.onclick = () => event('token_opened', { tokenAddress: item.tokenAddress });
       side.append(open);
     }
-    const remove=node('button','bag-remove','REMOVE');remove.type='button';remove.onclick=()=>{const remaining=bag().filter(saved=>saved.tokenAddress.toLowerCase()!==item.tokenAddress.toLowerCase());localStorage.setItem(BAG_KEY,JSON.stringify(remaining));renderBag();};side.append(remove);
+    const remove=node('button','bag-remove','REMOVE');remove.type='button';remove.onclick=()=>{const remaining=bag().filter(saved=>itemKey(saved)!==itemKey(item));localStorage.setItem(BAG_KEY,JSON.stringify(remaining));renderBag();};side.append(remove);
     list.append(row);
   }
 }

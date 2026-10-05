@@ -77,6 +77,23 @@ INSERT OR IGNORE INTO find_signals(token_address,found_at,data_timestamp,payload
  SELECT token_address,found_at,data_timestamp,payload FROM auto_hunt_signals;
 PRAGMA user_version = 6;
 `;
+const migration7 = `
+CREATE TABLE IF NOT EXISTS solana_pools (
+ pool_address TEXT PRIMARY KEY, mint_address TEXT NOT NULL, quote_mint TEXT NOT NULL,
+ quote_symbol TEXT, dex_id TEXT, name TEXT, symbol TEXT, image_url TEXT,
+ created_at INTEGER NOT NULL, discovered_at INTEGER NOT NULL, fetched_at INTEGER NOT NULL,
+ price REAL, fdv REAL, market_cap REAL, liquidity REAL, volume_5m REAL,
+ buys_5m INTEGER, sells_5m INTEGER, buyers_5m INTEGER, sellers_5m INTEGER,
+ price_change_5m REAL, payload TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS solana_pools_mint_time ON solana_pools(mint_address,created_at,fetched_at);
+CREATE TABLE IF NOT EXISTS solana_find_signals (
+ id INTEGER PRIMARY KEY, mint_address TEXT NOT NULL, pool_address TEXT NOT NULL,
+ found_at INTEGER NOT NULL, data_timestamp INTEGER NOT NULL, payload TEXT NOT NULL,
+ UNIQUE(mint_address));
+CREATE INDEX IF NOT EXISTS solana_find_signals_time ON solana_find_signals(found_at);
+ALTER TABLE product_events ADD COLUMN chain TEXT;
+PRAGMA user_version = 7;
+`;
 export class Store {
   readonly db: DatabaseSync;
   constructor(path: string) {
@@ -84,13 +101,14 @@ export class Store {
     this.db = new DatabaseSync(path);
     this.db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
     const version = Number((this.db.prepare('PRAGMA user_version').get() as any).user_version);
-    if (version > 6) throw new Error(`Unsupported database schema ${version}`);
+    if (version > 7) throw new Error(`Unsupported database schema ${version}`);
     this.db.exec(schema);
     if (version < 2) this.atomic(() => this.db.exec(migration2));
     if (version < 3) this.atomic(() => this.db.exec(migration3));
     if (version < 4) this.atomic(() => this.db.exec(migration4));
     if (version < 5) this.atomic(() => this.db.exec(migration5));
     if (version < 6) this.atomic(() => this.db.exec(migration6));
+    if (version < 7) this.atomic(() => this.db.exec(migration7));
   }
   all(sql: string, ...params: any[]): any[] { return this.db.prepare(sql).all(...params); }
   one(sql: string, ...params: any[]): any { return this.db.prepare(sql).get(...params); }

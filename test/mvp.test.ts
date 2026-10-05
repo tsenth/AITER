@@ -35,7 +35,7 @@ test('fresh RPC trades can rank a token without a Gecko market record',()=>{
 });
 test('AUTO HUNT uses strict fresh signals and open beta serves persisted finds',async()=>{
   const now=Date.now(),s=new Store(':memory:');seed(s,now);
-  const cfg={...config(),autoHuntEnabled:true,autoHuntBeta:true};
+  const cfg={...config(),chain:'robinhood' as const,autoHuntEnabled:true,autoHuntBeta:true};
   const signals=rankAutoHunt(s,cfg,now);assert.equal(signals.length,1);
   s.run('INSERT INTO auto_hunt_signals(token_address,found_at,data_timestamp,payload) VALUES (?,?,?,?)',
     token,now,Date.parse(signals[0].dataTimestamp),JSON.stringify(signals[0]));
@@ -49,7 +49,7 @@ test('AUTO HUNT uses strict fresh signals and open beta serves persisted finds',
   assert.equal(response.status,200);assert.equal(data.count,1);assert.equal(data.signals[0].tokenAddress,token);s.close();
 });
 test('health and find handlers return JSON without fabricating candidates',async()=>{
-  const s=new Store(':memory:'),server=createWebServer(s,config());
+  const s=new Store(':memory:'),server=createWebServer(s,{...config(),chain:'robinhood'});
   const call=(url:string,method='GET',body='')=>new Promise<{status:number;body:string}>(resolve=>{
     const req=Readable.from(body?[body]:[]) as any;req.url=url;req.method=method;
     const res={statusCode:200,writeHead(code:number){this.statusCode=code},end(content?:string){resolve({status:this.statusCode,body:content??''})}};
