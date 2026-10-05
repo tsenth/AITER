@@ -14,7 +14,10 @@ import { isSolanaAddress, rankSolana, rankSolanaDetailed, solanaHealth } from '.
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../public');
 const files: Record<string,[string,string]> = {
   '/':['index.html','text/html; charset=utf-8'], '/style.css':['style.css','text/css; charset=utf-8'],
-  '/app.js':['app.js','text/javascript; charset=utf-8'], '/favicon.svg':['favicon.svg','image/svg+xml'],
+  '/app.js':['app.js','text/javascript; charset=utf-8'],
+  '/favicon.ico':['favicon.ico','image/x-icon'],
+  '/favicon-32x32.png':['favicon-32x32.png','image/png'],
+  '/apple-touch-icon.png':['apple-touch-icon.png','image/png'],
 };
 const events = new Set(['hunt_started','hunt_results_count','token_passed','token_bagged','token_opened','token_shilled','instant_buy_opened','bag_opened']);
 const lockAbi=parseAbi(['function lockedBalanceOf(address account) view returns (uint256)']);
