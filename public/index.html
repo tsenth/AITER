@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#070809">
+  <meta name="theme-color" content="#f1eee6">
   <meta name="description" content="Stop monitoring. AITER finds fresh Solana signals for you.">
   <title>AITER. Stop monitoring.</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4">
   <link rel="shortcut icon" href="/favicon.ico?v=4">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
-  <link rel="stylesheet" href="/style.css?v=15">
+  <link rel="stylesheet" href="/style.css?v=16">
 </head>
 <body>
   <header class="site-header">
@@ -20,12 +20,12 @@
       <button id="autoNav" class="nav" type="button">AUTO</button>
       <button id="bagNav" class="nav" type="button">BAG <span id="bagCount"></span></button>
     </nav>
+    <div class="eyebrow status-line"><span class="live-dot"></span><span id="liveLabel">SOLANA LIVE</span></div>
   </header>
 
   <main>
     <section id="home" class="view home" aria-label="Find fresh tokens">
       <div class="home-copy">
-        <div class="eyebrow status-line"><span class="live-dot"></span><span id="liveLabel">SOLANA LIVE</span></div>
         <h1>STOP<br>MONITORING<span>.</span></h1>
         <p class="home-statement">AITER FINDS IT<br>FOR YOU.</p>
         <p class="home-caption">Fresh signals. Less noise. Your call.</p>
@@ -49,7 +49,7 @@
       <div class="agent-story" id="agent">
         <div class="agent-intro">
           <div class="eyebrow">THE AGENT ENGINE</div>
-          <h2>ONE AGENT.<br>THE WHOLE MARKET<span>.</span></h2>
+          <h2>THE AGENT<br>NEVER SLEEPS<span>.</span></h2>
           <p>The AITER agent watches Solana continuously, detects fresh pools and turns current market activity into a small set of signals you can understand in seconds.</p>
         </div>
 
@@ -117,7 +117,7 @@
     <section id="bagPage" class="view bag-view hidden">
       <div class="eyebrow">PERSONAL SIGNALS</div>
       <h2>YOUR BAG<span>.</span></h2>
-      <p class="bag-intro">Signals you kept. Saved on this device.</p>
+      <p class="bag-intro">Signals you kept / Solana</p>
       <div id="bagList"></div>
     </section>
 
@@ -136,6 +136,6 @@
   </dialog>
 
   <footer><span>AITER SURFACES MARKET ACTIVITY. IT DOES NOT PREDICT RETURNS.</span><span>AITER / SOLANA</span></footer>
-  <script src="/app.js?v=15" defer></script>
+  <script src="/app.js?v=16" defer></script>
 </body>
 </html>

@@ -258,8 +258,8 @@ function renderCard() {
   if (buyerValue != null) metric(metrics, current.recentTrades != null ? 'RECENT BUYERS' : 'BUYERS 5M', buyerValue);
   card.append(metrics);
   const actions = node('div', 'actions');
-  const pass = node('button', 'action-btn pass-action', 'PASS');
-  const save = node('button', 'action-btn bag-action', 'BAG');
+  const pass = node('button', 'action-btn pass-action', 'PASS ×');
+  const save = node('button', 'action-btn bag-action', 'BAG +');
   pass.type = save.type = 'button';
   pass.onclick = () => next('pass');
   save.onclick = () => next('bag');
