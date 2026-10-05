@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4">
   <link rel="shortcut icon" href="/favicon.ico?v=4">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
-  <link rel="stylesheet" href="/style.css?v=16">
+  <link rel="stylesheet" href="/style.css?v=17">
 </head>
 <body>
   <header class="site-header">
@@ -43,21 +43,54 @@
           <span class="radar-dot dot-one"></span><span class="radar-dot dot-two"></span><span class="radar-dot dot-three"></span>
           <button id="hunt" class="radar-cta" type="button"><span class="cta-small">PRESS TO</span><span>FIND ME<br>SOMETHING</span></button>
         </div>
+      </div>
+
+      <div class="market-strip" aria-label="Live market system">
+        <span class="strip-label"><i></i>SOLANA / LIVE</span>
         <div id="liveMetrics" class="live-metrics" aria-live="polite"></div>
+        <span class="strip-state">SCANNING NOW <i></i></span>
       </div>
 
       <div class="agent-story" id="agent">
+        <section class="signal-story" aria-label="Market noise becomes a signal">
+          <div class="stream-head"><span>LIVE MARKET INPUT / SOLANA</span><span>001—FILTER</span></div>
+          <div class="token-stream" aria-hidden="true">
+            <div class="noise-particles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <span class="stream-arrow">→</span>
+            <div class="filter-gate"><b>AITER</b><small>FILTER</small></div>
+            <span class="stream-arrow">→</span>
+            <div class="survivors"><i></i><i></i></div>
+          </div>
+          <div class="noise-to-signal">
+            <div class="noise-word"><strong>NOISE</strong><div class="noise-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            <div class="aiter-filter"><span>↓</span><b>AITER.</b><small>REMOVES THE NOISE</small><span>↓</span></div>
+            <div class="signal-word"><i></i><strong>SIGNAL</strong><small>ONE SURVIVES</small></div>
+          </div>
+        </section>
+
         <div class="agent-intro">
           <div class="eyebrow">THE AGENT ENGINE</div>
           <h2>THE AGENT<br>NEVER SLEEPS<span>.</span></h2>
           <p>The AITER agent watches Solana continuously, detects fresh pools and turns current market activity into a small set of signals you can understand in seconds.</p>
         </div>
 
+        <section class="agent-visuals" aria-label="AITER watches the market">
+          <div class="market-sphere" aria-hidden="true">
+            <span class="sphere-orbit orbit-a"></span><span class="sphere-orbit orbit-b"></span><span class="sphere-orbit orbit-c"></span>
+            <span class="sphere-axis"></span>
+            <i class="node n1"></i><i class="node n2"></i><i class="node n3"></i><i class="node n4"></i><i class="node n5"></i><i class="node n6"></i>
+            <div class="sphere-caption"><small>MARKET SPHERE</small><b>THE WHOLE MARKET<br>UNDER WATCH.</b></div>
+          </div>
+          <div class="agent-core" aria-hidden="true">
+            <span class="core-ring core-a"></span><span class="core-ring core-b"></span><span class="core-ring core-c"></span><i></i>
+            <div class="core-caption"><small>AITER CORE / ACTIVE</small><b>WATCH.<br>FILTER.<br>FIND.</b></div>
+          </div>
+        </section>
+
         <div class="agent-flow" aria-label="How the AITER agent works">
           <article><span>01</span><div><h3>DISCOVER</h3><p>Finds newly created Solana pools through live indexed market data.</p></div></article>
           <article><span>02</span><div><h3>OBSERVE</h3><p>Tracks recent swaps, independent buyers, buy and sell pressure, market size, liquidity and short-window volume when available.</p></div></article>
           <article><span>03</span><div><h3>FILTER</h3><p>Removes stale, inactive and clearly weak candidates. Missing data stays missing. AITER never turns an unknown value into zero.</p></div></article>
-          <article><span>04</span><div><h3>SURFACE</h3><p>Ranks the remaining fresh activity and explains every result with the exact signals that caused it to appear.</p></div></article>
         </div>
 
         <div class="agent-principle">
