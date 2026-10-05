@@ -213,3 +213,9 @@ footer{border-color:var(--ink);color:var(--graphite);background:var(--paper)}
 .radar-cta{min-width:330px;height:104px;padding:0 34px;font-size:18px;line-height:1.02;border-width:2px;box-shadow:10px 10px 0 rgba(16,16,16,.12)}
 .radar-cta:after{font-size:31px}.radar-cta .cta-small{font-size:7px}.radar-cta:hover{transform:translate(8px,-4px);box-shadow:4px 4px 0 rgba(16,16,16,.16)}.radar-cta:active{transform:translate(8px,0) scale(.985);box-shadow:2px 2px 0 rgba(16,16,16,.12)}
 @media(max-width:600px){.radar-cta{min-width:260px;height:82px;padding:0 24px;font-size:14px;box-shadow:7px 7px 0 rgba(16,16,16,.12)}.radar-cta:after{font-size:24px}}
+
+/* The hunt action leads the hero; the statement follows it. */
+.home-copy>.radar-cta{position:relative;left:auto;top:auto;transform:none;width:min(100%,470px);height:126px;margin:0 0 46px;z-index:5}
+.home-copy>.radar-cta:hover{transform:translate(8px,-4px)}.home-copy>.radar-cta:active{transform:translate(8px,0) scale(.985)}
+@media(min-width:861px){.home-copy>.radar-cta{left:auto;top:auto}}
+@media(max-width:600px){.home-copy>.radar-cta{width:100%;min-width:0;height:96px;margin-bottom:35px}.radar-column .radar{margin-top:4px}}
